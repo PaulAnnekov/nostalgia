@@ -1,0 +1,17 @@
+{
+  "name": "nostalgia",
+  "version": "1.0.0",
+  "description": "One-way sync (from local folder to cloud) to Google Photos",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "author": "Paul Annekov",
+  "license": "MIT",
+  "dependencies": {
+    "tough-cookie": "4.0.0",
+    "ts-node": "8.9.0",
+    "typescript": "3.8.3",
+    "upload-gphotos": "4.2.1"
+  }
+}
