@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { GPhotos } from 'upload-gphotos';
+import { GPhotos, GPhotosAlbum } from 'upload-gphotos';
 import { CookieJar, Cookie } from 'tough-cookie';
 import config from './config.json';
 import bunyan, { LogLevel } from 'bunyan';
+import queue from 'queue';
+import { promisify } from 'util';
 
 const log = bunyan.createLogger({ 
     name: 'nostalgia',
@@ -46,6 +48,7 @@ class AlbumSettings {
 }
 
 class OneWaySync {
+    private readonly CONCURRENCY = 4;
     private readonly APP_NAME = 'Nostalgia';
     // https://developers.google.com/photos/library/guides/upload-media#file-types-sizes
     private readonly SUPPORTED_TYPES = ['BMP', 'GIF', 'HEIC', 'ICO', 'JPG', 'PNG', 'TIFF', 'WEBP', 'RAW', '3GP', '3G2', 
@@ -92,7 +95,7 @@ class OneWaySync {
     }
 
     private generateFilename(realName: string) {
-        return `(${this.APP_NAME} App) ${realName}`;
+        return `(${this.APP_NAME} App) ${path.basename(realName)}`;
     }
 
     private async getDirectories(source: string) {
@@ -100,14 +103,14 @@ class OneWaySync {
         return entities.filter(entity => entity.isDirectory()).map(entity => entity.name);
     }
     
-    private async getMediaFiles(source: string) {
+    private async getMediaFiles(source: string, subFolder = '') {
         let files: string[] = [];
-        const entities = await fs.promises.readdir(source, { withFileTypes: true });
+        const entities = await fs.promises.readdir(path.resolve(source, subFolder), { withFileTypes: true });
         for (const entity of entities) {
             if (entity.isFile() && this.SUPPORTED_TYPES.includes(path.extname(entity.name).slice(1).toUpperCase())) {
-                files.push(entity.name);
+                files.push(path.join(subFolder, entity.name));
             } else if (entity.isDirectory()) {
-                files = files.concat(await this.getMediaFiles(path.resolve(source, entity.name)));
+                files = files.concat(await this.getMediaFiles(source, path.join(subFolder, entity.name)));
             }
         }
         return files;
@@ -156,6 +159,10 @@ class OneWaySync {
         log.info({ count: localMediaFiles.length }, 'found media files in directory');
         let ignored = 0;
         let added = 0;
+        let uploadedBytes = 0;
+        const uploadQueue = new queue({
+            concurrency: this.CONCURRENCY
+        });
         for (const file of localMediaFiles) {
             const filePath = path.resolve(directoryPath, file);
             const syncedFile = albumSettings.synced[file];
@@ -164,18 +171,28 @@ class OneWaySync {
                 ignored++;
                 continue;
             }
-            log.info({ file }, 'uploading new file');
+            uploadQueue.push(async () => {
+                const size = (await fs.promises.stat(filePath)).size;
+                log.info({ file, size }, 'uploading new file');
+                try {
             const photo = await this.gphotos.upload({
                 stream: fs.createReadStream(filePath),
-                size: (await fs.promises.stat(filePath)).size,
+                        size,
                 filename: this.generateFilename(file),
             });
             log.info({ file }, 'adding file to album');
-            await album.append(photo);
+                    await (album as GPhotosAlbum).append(photo);
+                    uploadedBytes += size;
             added++;
-            albumSettings.updateSynced(file, photo.id);
+                    await albumSettings.updateSynced(file, photo.id);
+                } catch(e) {
+                    log.error({ e, file }, 'error during upload/append to album');
+                }
+            })
         }
-        log.info({ ignored, added }, 'directory synced');
+        log.info({ count: uploadQueue.length }, 'starting uploads');
+        await promisify(uploadQueue.start).bind(uploadQueue)();
+        log.info({ ignored, added, uploadedBytes }, 'directory synced');
     }
 
     async start() {
