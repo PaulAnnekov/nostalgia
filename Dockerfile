@@ -8,9 +8,9 @@ RUN chown node: /app
 
 USER node
 
-COPY index.ts index.ts
-COPY package.json package.json
-COPY package-lock.json package-lock.json
-COPY tsconfig.json tsconfig.json
+COPY src/index.ts index.ts
+COPY src/package.json package.json
+COPY src/package-lock.json package-lock.json
+COPY src/tsconfig.json tsconfig.json
 
 RUN npm ci

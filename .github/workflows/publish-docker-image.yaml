@@ -3,6 +3,10 @@ name: Publish Docker Image
 
 on:
   push:
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+
     branches:
       - master
 

@@ -4,6 +4,6 @@ services:
   app:
     image: docker.pkg.github.com/paulannekov/nostalgia/app:latest
     volumes:
-      - "config.json:/app/config.json"
+      - "./config.json:/app/config.json"
       # - "folder_with_subfolders_to_sync:/data"
     command: ["/bin/sh", "-c", "npx ts-node index.ts /data | npx bunyan -o short"]
