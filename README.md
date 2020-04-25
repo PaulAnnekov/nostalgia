@@ -1,17 +1,40 @@
 # Nostalgia
 
-## Algorithm
+One-way sync (from local folders to cloud) of media items to Google Photos using unofficial API.
 
-- list all sub-folders
-- for each sub-folder
-    - recursively get a list of all files, filter out non-image/video
-    - check whether album with folder name already exists
-        - create if not
-    - get a list of all media in an album
-    - load a list of already synced files from nostalgia.json
-    - compare ids from cloud and ids from json and prepare a list for upload
-    - upload each file
-        - update nostalgia.json with file and its cloud id
+- uploads only files with [supported extensions](https://developers.google.com/photos/library/guides/upload-media#file-types-sizes)
+- ignores zero-byte files
+- each folder is traversed recursively
+- saves already uploaded files to `nostalgia.json` file in album folder and ignores them on next execution
+- concurrent upload (5 streams by default)
+- cooldown mechanism and retries on upload failure
+
+Run an app for the following directory:
+```
+.
+├── 2015.01.16-25 Trip to Portugal
+|   ├── IMG_20150118_153701.jpg
+|   └── IMG_20150118_152755.jpg
+└── 2015.11.24 Home Party
+    ├── Videos
+    |   ├── GOPR0001.MP4
+    |   └── GOPR0010.MP4
+    ├── IMG_20150118_153701.jpg
+    └── IMG_20150118_152755.jpg
+```
+
+And you will get two albums in Google Photos:
+```
+2015.01.16-25 Trip to Portugal
+  IMG_20150118_153701.jpg
+  IMG_20150118_152755.jpg
+
+2015.11.24 Home Party
+  GOPR0001.MP4
+  GOPR0010.MP4
+  IMG_20150118_153701.jpg
+  IMG_20150118_152755.jpg
+```
 
 ## Why not...
 
