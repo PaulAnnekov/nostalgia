@@ -4,7 +4,7 @@
   "description": "One-way sync (from local folder to cloud) to Google Photos",
   "main": "index.ts",
   "scripts": {
-    "start": "ts-node index.ts | bunyan"
+    "start": "ts-node index.ts | bunyan -o short"
   },
   "author": "Paul Annekov",
   "license": "MIT",
