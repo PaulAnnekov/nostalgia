@@ -1,0 +1,12 @@
+{
+    "cookies": [
+      {
+        "Name": "...",
+        "Value": "...",
+        "Domain": "...",
+        "HttpOnly": true,
+        "Secure": false,
+        "Path": "..."
+      }
+    ]
+}
