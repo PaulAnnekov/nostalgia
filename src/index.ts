@@ -9,7 +9,8 @@ import { promisify } from 'util';
 
 const log = bunyan.createLogger({ 
     name: 'nostalgia',
-    level: process.env.LOG_LEVEL as LogLevel || 'info' 
+    serializers: bunyan.stdSerializers,
+    level: process.env.LOG_LEVEL as LogLevel || 'info'
 });
 
 process.on('unhandledRejection', (err) => {
