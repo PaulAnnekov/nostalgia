@@ -195,6 +195,7 @@ class OneWaySync {
     private async uploadDirectory(directory: string) {
         log.info({ directory }, 'syncing directory');
         const directoryPath = path.resolve(this.source, directory);
+        // TODO: search by id in nostalgia.json
         let album = await this.gphotos.searchAlbum({ title: directory });
         if (!album) {
             log.info("album doesn't exist, creating new one");
